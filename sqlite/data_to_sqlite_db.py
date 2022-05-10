@@ -95,10 +95,10 @@ def main():
         run_sql_from_file (sql_file1, sqlite_conn)
     
         # test
-        result = sqlite_conn.execute('SELECT * FROM "student" LIMIT 10')
+        result = sqlite_conn.execute('SELECT * FROM "Student" LIMIT 10')
         print(f'After create and insert:\n{result.fetchall()}')
         # Drop table
-        sqlite_conn.execute('DROP TABLE "student"')
+        sqlite_conn.execute('DROP TABLE "Student"')
 
         print ("\n\nUsing pandas dataframe to read sql queries and fill table")
         #####################################################################################################
@@ -108,7 +108,7 @@ def main():
         sqlite_conn.execute('CREATE TABLE "Student"('
                             'studid INT NOT NULL PRIMARY KEY,'
                             'name TEXT NOT NULL,'
-                            'DOB TEXT NOT NULL,'
+                            'dob TEXT NOT NULL,'
                             'program TEXT NOT NULL,'
                             'credit INT NOT NULL'
                             ')')
@@ -123,15 +123,15 @@ def main():
         # Some pre-processing
         df = df.loc[:,'studid':'credit'] 
 
-        # Step 2: the dataframe df is written into an SQL table 'student'
-        df.to_sql('student', con=engine, if_exists='append', index=False)
+        # Step 2: the dataframe df is written into an SQL table 'Student'
+        df.to_sql('Student', con=engine, if_exists='append', index=False)
     
         #test
         sql_ =  """
-                SELECT * FROM student LIMIT 10
+                SELECT * FROM Student LIMIT 10
                 """
         test_df = pd.read_sql_query(sql_,sqlite_conn)
-        print("Select 10 students from Student table: ")
+        print("Select 10 Students from Student table: ")
         print(test_df)
     #-------------------- Example ends ---------------------------#
     except Exception as e:

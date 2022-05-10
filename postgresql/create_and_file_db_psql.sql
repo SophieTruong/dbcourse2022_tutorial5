@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS Student;
 CREATE TABLE Student(
   studid INT NOT NULL,
   name VARCHAR(100) NOT NULL,
-  DOB DATE NOT NULL,
+  dob DATE NOT NULL,
   program VARCHAR(10) NOT NULL,
   credit INT NOT NULL,
   PRIMARY KEY (studid)

@@ -103,14 +103,13 @@ def main():
             print ("Error when creating database: ", e)
             pass
         cursor.close()
-
         # THE TUTORIAL WILL USE SQLAlchemy to create connection, execute queries and fill table
         #####################################################################################################
         # Create and fill table from sql file using run_sql_from_file function (Not needed if using pandas df)
         #####################################################################################################
         # Step 1: COnnect to db using SQLAlchemy create_engine 
         DIALECT = 'postgresql+psycopg2://'
-        databse ='tutorial4'
+        database ='tutorial4'
         db_uri = "%s:%s@%s/%s" % (user, password, host, database)
         print(DIALECT+db_uri)
         engine = create_engine(DIALECT + db_uri)
@@ -122,10 +121,10 @@ def main():
         # run statements to create tables
         run_sql_from_file (sql_file1, psql_conn)
         # test
-        result = psql_conn.execute('SELECT * FROM student LIMIT 10')
+        result = psql_conn.execute('SELECT * FROM "Student" LIMIT 10')
         print(f'After create and insert:\n{result.fetchall()}')
         # Drop table
-        psql_conn.execute('DROP TABLE "student"')
+        psql_conn.execute(' DROP TABLE "Student" ')
 
         
         #####################################################################################################
@@ -137,7 +136,7 @@ def main():
             'CREATE TABLE IF NOT EXISTS "Student"('
             'studid INT NOT NULL,'
             'name VARCHAR(100) NOT NULL,'
-            'DOB DATE NOT NULL,'
+            'dob DATE NOT NULL,'
             'program VARCHAR(10) NOT NULL,'
             'credit INT NOT NULL,'
             'PRIMARY KEY (studid)'
@@ -154,16 +153,18 @@ def main():
         df = df.loc[:,'studid':'credit'] 
         # print(df)
 
-        # Step 2: the dataframe df is written into an SQL table 'student'
-        df.to_sql('student', con=engine, if_exists='append', index=False)
+        # Step 2: the dataframe df is written into an SQL table 'Student'
+        df.to_sql('Student', con=psql_conn, if_exists='append', index=False)
     
         #test
         sql_ =  """
-                SELECT * FROM student LIMIT 10
+                SELECT * FROM Student LIMIT 10
                 """
         test_df = pd.read_sql_query(sql_,psql_conn)
-        print("Select 10 students from Student table: ")
+        print("Select 10 Students from Student table: ")
         print(test_df)
+        # Drop table
+        psql_conn.execute('DROP TABLE "Student"')
 
 
     except (Exception, Error) as error:
