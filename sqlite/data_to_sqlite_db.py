@@ -17,6 +17,7 @@ copies or substantial portions of the Software.
 ''' 
 from sqlalchemy import create_engine, text
 import pandas as pd
+from pathlib import Path
 
 def run_sql_from_file(sql_file, sqlite_conn):
     '''
@@ -50,9 +51,9 @@ def run_sql_from_file(sql_file, sqlite_conn):
     return ret_
 
 def main():
-    DATADIR = '//Users//sophietruong//Desktop//Database2022_TA_materials//tutorial_4///'
+    DATADIR = str(Path(__file__).parent.parent) # for relative path 
     DIALECT = 'sqlite:///'
-    DB_NAME = 'tutorial4.db'        # An empty db 
+    DB_NAME = 'sqlite/tutorial4.db'        # An empty db 
     db_uri = DIALECT      # of form: sqlite:///test_1.db
     engine       = create_engine(db_uri + DB_NAME, echo=False)
 
@@ -114,7 +115,7 @@ def main():
         trans.commit() # !IMPORTANT: remember to commit trans before starting pd dataframe
   
         # Step 1: read csv
-        df = pd.read_csv(DATADIR + 'student_data.csv', sep=',', quotechar='"',dtype='unicode')
+        df = pd.read_csv(DATADIR + '/student_data.csv', sep=',', quotechar='"',dtype='unicode')
 
         #if we have an excel file
         #df = pd.read_excel('ourfile.xlsx')

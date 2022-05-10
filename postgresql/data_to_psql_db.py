@@ -27,7 +27,7 @@ from psycopg2 import Error
 from sqlalchemy import create_engine, text
 import pandas as pd
 import numpy as np
-
+from pathlib import Path
 
 def run_sql_from_file(sql_file, psql_conn):
     '''
@@ -61,16 +61,21 @@ def run_sql_from_file(sql_file, psql_conn):
     return ret_
 
 def main():
-    DATADIR = '//Users//sophietruong//Desktop//Database2022_TA_materials//tutorial_4//'
+    DATADIR = str(Path(__file__).parent.parent) # for relative path 
+    print(DATADIR)
+    database="postgres"    # TO BE REPLACED 
+    user='postgres'        # TO BE REPLACED
+    password='password'    # TO BE REPLACED
+    host='localhost'
     # use connect function to establish the connection
     try:
-        # Connect the postgres database from your local machine 
+        # Connect the postgres database from your local machine using psycopg2
         connection = psycopg2.connect(
-        database="postgres",    # TO BE REPLACED 
-        user='postgres',        # TO BE REPLACED
-        password='password',
-        host='localhost'
-        )
+                                        database=database,              
+                                        user=user,       
+                                        password=password,   
+                                        host=host
+                                    )
         connection.autocommit = True
 
         # Create a cursor to perform database operations
@@ -83,24 +88,37 @@ def main():
         # Fetch result
         record = cursor.fetchone()
         print("You are connected to - ", record, "\n")
+
+        
+        
         # -------------- Start Example -----------------#
-        # Step 0: Creating a database 
+        # Step 0: Creating a database using psycopg2
         #       (here I used a work around for CREATE DATABASE if not exists:
         #         https://stackoverflow.com/questions/18389124/simulate-create-database-if-not-exists-for-postgresql)
-        sql = '''   SELECT 'CREATE DATABASE tutorial4'
-                    WHERE NOT EXISTS 
-                    (SELECT FROM pg_database WHERE datname = 'tutorial4');''' # can check on shell
-        cursor.execute(sql)
-        print("Database created successfully........")
-        # cursor.close()
+        try: 
+            sql = '''   CREATE DATABASE tutorial4; ''' # can check on shell
+            cursor.execute(sql)
+            print("Database created successfully........")
+        except Exception as e: 
+            print ("Error when creating database: ", e)
+            pass
+        cursor.close()
+
+        # THE TUTORIAL WILL USE SQLAlchemy to create connection, execute queries and fill table
         #####################################################################################################
         # Create and fill table from sql file using run_sql_from_file function (Not needed if using pandas df)
         #####################################################################################################
-        print("Creating DB...")
-
-        engine = create_engine('postgresql+psycopg2://postgres:password@localhost/tutorial4')
+        # Step 1: COnnect to db using SQLAlchemy create_engine 
+        DIALECT = 'postgresql+psycopg2://'
+        databse ='tutorial4'
+        db_uri = "%s:%s@%s/%s" % (user, password, host, database)
+        print(DIALECT+db_uri)
+        engine = create_engine(DIALECT + db_uri)
         sql_file1  = open(DATADIR + '/postgresql/create_and_file_db_psql.sql')
         psql_conn  = engine.connect()
+
+        # Step 2 (Option 1): Read SQL files for CREATE TABLE and INSERT queries to Student table 
+
         # run statements to create tables
         run_sql_from_file (sql_file1, psql_conn)
         # test
@@ -108,31 +126,34 @@ def main():
         print(f'After create and insert:\n{result.fetchall()}')
         # Drop table
         psql_conn.execute('DROP TABLE "student"')
-        
 
-        print ("\n\nUsing pandas dataframe to read sql queries and fill table")
+        
         #####################################################################################################
         # Create and file table from sql file using run_sql_from_file function (Not needed if using pandas df)
         #####################################################################################################
-        # Step 0: create table using sqlite_conn
-        cursor.execute("""CREATE TABLE IF NOT EXISTS Student(
-                        studid INT NOT NULL,
-                        name VARCHAR(100) NOT NULL,
-                        DOB DATE NOT NULL,
-                        program VARCHAR(10) NOT NULL,
-                        credit INT NOT NULL,
-                        PRIMARY KEY (id)
-                        );""")
+        # Step 2 (Option 2): CREATE TABLE engine connection & fill in tables with Pandas Dataframe to_sql
+        print ("\n\nUsing pandas dataframe to read sql queries and fill table")
+        psql_conn.execute(
+            'CREATE TABLE IF NOT EXISTS "Student"('
+            'studid INT NOT NULL,'
+            'name VARCHAR(100) NOT NULL,'
+            'DOB DATE NOT NULL,'
+            'program VARCHAR(10) NOT NULL,'
+            'credit INT NOT NULL,'
+            'PRIMARY KEY (studid)'
+            ');'
+        )
   
         # Step 1: read csv
-        df = pd.read_csv(DATADIR + 'student_data.csv', sep=',', quotechar='"',dtype='unicode')
+        df = pd.read_csv(DATADIR + '/student_data.csv', sep=',', quotechar='"',dtype='unicode')
 
         #if we have an excel file
         #df = pd.read_excel('ourfile.xlsx')
         
         # Some pre-processing
         df = df.loc[:,'studid':'credit'] 
-        print(df)
+        # print(df)
+
         # Step 2: the dataframe df is written into an SQL table 'student'
         df.to_sql('student', con=engine, if_exists='append', index=False)
     
@@ -150,7 +171,7 @@ def main():
     finally:
         if (connection):
             psql_conn.close()
-            cursor.close()
+            # cursor.close()
             connection.close()
             print("PostgreSQL connection is closed")
 main()
