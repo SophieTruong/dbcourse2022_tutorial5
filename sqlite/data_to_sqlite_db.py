@@ -133,6 +133,52 @@ def main():
         test_df = pd.read_sql_query(sql_,sqlite_conn)
         print("Select 10 Students from Student table: ")
         print(test_df)
+    #-------------------- Views ---------------------------#
+    # Begin transaction
+        trans = sqlite_conn.begin()
+
+        # TEST if connection work with a random table (This is in last week tutorial)
+        try:
+            sqlite_conn.execute('DROP VIEW "DSstudent";')
+        except:
+            pass
+        sqlite_conn.execute(
+                    'CREATE VIEW "DSstudent" AS '
+                        'SELECT studID, name, dob, program, credit '
+                        'FROM Student '
+                        'WHERE program = "DS"'
+                    )
+        res = sqlite_conn.execute('SELECT * FROM "DSstudent";')
+        print("Result of SELECT * FROM view:")
+        print(res.fetchall())
+        print("\n")
+        trans.commit() # !IMPORTANT: remember to commit trans before starting pd dataframe
+
+    #-------------------- Triggers ---------------------------#
+    # Begin transaction
+        trans = sqlite_conn.begin()
+
+        # TEST if connection work with a random table (This is in last week tutorial)
+        sqlite_conn.execute('DROP VIEW "DSstudent";')
+        sqlite_conn.execute(
+                     'CREATE TRIGGER MinCredits '
+                         'AFTER UPDATE OF credit ON Student '
+                         'FOR EACH ROW '
+                         'WHEN (NEW.credit <= OLD.credit) '
+                         'BEGIN '
+                             'UPDATE Student '
+                             'SET credit = OLD.credit '
+                             'WHERE studID = NEW.studID; '
+                         'END; '
+                    )
+        sqlite_conn.execute('UPDATE Student SET credit = credit-1 WHERE credit = 1; ')
+        sqlite_conn.execute('UPDATE Student SET credit = 0 WHERE studid = 2;')
+        res = sqlite_conn.execute('SELECT * FROM Student WHERE credit = 1;')
+        print("Result of SELECT * after trigger:")
+        print(res.fetchall())
+        print("\n")
+        trans.commit() # !IMPORTANT: remember to commit trans before starting pd dataframe
+
     #-------------------- Example ends ---------------------------#
     except Exception as e:
         print(f'FAILED due to: {str(e)}')
