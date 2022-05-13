@@ -62,8 +62,11 @@ def run_sql_from_file(sql_file, psql_conn):
 
 def main():
     DATADIR = str(Path(__file__).parent.parent) # for relative path 
-    print(DATADIR)
-    # In postgres=# shell: CREATE ROLE test_admin WITH CREATEDB LOGIN PASSWORD 'pssword'; 
+    print("Data directory: ", DATADIR)
+
+    # In postgres=# shell: CREATE ROLE [role_name] WITH CREATEDB LOGIN PASSWORD '[pssword]'; 
+    # https://www.postgresql.org/docs/current/sql-createrole.html
+
     database="postgres"    # TO BE REPLACED 
     user='test_admin'        # TO BE REPLACED
     password='pssword'    # TO BE REPLACED
@@ -77,8 +80,7 @@ def main():
                                         password=password,   
                                         host=host
                                     )
-        connection.autocommit = True
-
+        # connection.autocommit = True
         # Create a cursor to perform database operations
         cursor = connection.cursor()
         # Print PostgreSQL details
@@ -90,7 +92,6 @@ def main():
         record = cursor.fetchone()
         print("You are connected to - ", record, "\n")
 
-        
         
         # -------------- Start Example -----------------#
         # Step 0: Creating a database using psycopg2
@@ -104,6 +105,7 @@ def main():
             print ("Error when creating database: ", e)
             pass
         cursor.close()
+
         # THE TUTORIAL WILL USE SQLAlchemy to create connection, execute queries and fill table
         #####################################################################################################
         # Create and fill table from sql file using run_sql_from_file function (Not needed if using pandas df)
@@ -112,37 +114,34 @@ def main():
         DIALECT = 'postgresql+psycopg2://'
         database ='tutorial4'
         db_uri = "%s:%s@%s/%s" % (user, password, host, database)
-        print(DIALECT+db_uri)
+        print(DIALECT+db_uri) # postgresql+psycopg2://test_admin:pssword@localhost/tutorial4
         engine = create_engine(DIALECT + db_uri)
         sql_file1  = open(DATADIR + '/postgresql/create_and_file_db_psql.sql')
         psql_conn  = engine.connect()
 
-        # Step 2 (Option 1): Read SQL files for CREATE TABLE and INSERT queries to Student table 
-        # try: 
-        #     psql_conn.execute("DROP TABLE Student")
-        # except:
-        #     print("Table Student doesn't exist")
-        # run statements to create tables
+        # Step 2 (Option 1): Read SQL files for CREATE TABLE and INSERT queries to student table 
+
         run_sql_from_file (sql_file1, psql_conn)
+        
         # test
-        result = psql_conn.execute("SELECT * FROM Student LIMIT 10" )
+        result = psql_conn.execute("SELECT * FROM student LIMIT 10" )
         print(f'After create and insert:\n{result.fetchall()}')
         # Drop table
-        psql_conn.execute("DROP TABLE Student")
+        psql_conn.execute("DROP TABLE student")
 
         
         #####################################################################################################
-        # Create and file table from sql file using run_sql_from_file function (Not needed if using pandas df)
+        # Create and fill table from csv file using pandas df
         #####################################################################################################
         # Step 2 (Option 2): CREATE TABLE engine connection & fill in tables with Pandas Dataframe to_sql
-        print ("\n\nUsing pandas dataframe to read sql queries and fill table")
+        # print ("\n\nUsing pandas dataframe to read sql queries and fill table")
 
         try: 
-            psql_conn.execute("DROP TABLE Student")
+            psql_conn.execute("DROP TABLE student")
         except:
-            print("Table Student doesn't exist") 
+            print("Table student doesn't exist") 
 
-        psql_conn.execute(  'CREATE TABLE IF NOT EXISTS Student('
+        psql_conn.execute(  'CREATE TABLE IF NOT EXISTS student('
                             'studid INT NOT NULL,'
                             'name VARCHAR(100) NOT NULL,'
                             'dob DATE NOT NULL,'
@@ -158,26 +157,26 @@ def main():
         #if we have an excel file
         #df = pd.read_excel('ourfile.xlsx')
         
-        # Some pre-processing
+        # Some pre-processing 
         df = df.loc[:,'studid':'credit'] 
         # print(df)
 
-        # Step 2: the dataframe df is written into an SQL table 'Student'
+        # Step 2: the dataframe df is written into an SQL table 'student'
         df.to_sql('student', con=psql_conn, if_exists='append', index=False)
 
         #test
         # test
-        result = psql_conn.execute(""" SELECT * FROM Student LIMIT 10 """ )
-        print(f'After create and insert:\n{result.fetchall()}')
+        # result = psql_conn.execute(""" SELECT * FROM student LIMIT 10 """ )
+        # print(f'After create and insert:\n{result.fetchall()}')
         
         sql_ =  """
-                SELECT * FROM Student LIMIT 10
+                SELECT * FROM student LIMIT 10
                 """
         test_df = pd.read_sql_query(sql_,psql_conn)
-        print("Select 10 Students from Student table: ")
+        print("Select 10 students from student table: ")
         print(test_df)
         # Drop table
-        psql_conn.execute("DROP TABLE Student")
+        psql_conn.execute("DROP TABLE student")
 
 
     except (Exception, Error) as error:

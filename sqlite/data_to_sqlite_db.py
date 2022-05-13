@@ -95,17 +95,17 @@ def main():
         run_sql_from_file (sql_file1, sqlite_conn)
     
         # test
-        result = sqlite_conn.execute('SELECT * FROM "Student" LIMIT 10')
+        result = sqlite_conn.execute('SELECT * FROM "student" LIMIT 10')
         print(f'After create and insert:\n{result.fetchall()}')
         # Drop table
-        sqlite_conn.execute('DROP TABLE "Student"')
+        sqlite_conn.execute('DROP TABLE "student"')
 
         print ("\n\nUsing pandas dataframe to read sql queries and fill table")
         #####################################################################################################
-        # Create and file table from sql file using run_sql_from_file function (Not needed if using pandas df)
+        #   Fill table from csv file using pandas df
         #####################################################################################################
         # Step 0: create table using sqlite_conn
-        sqlite_conn.execute('CREATE TABLE "Student"('
+        sqlite_conn.execute('CREATE TABLE "student"('
                             'studid INT NOT NULL PRIMARY KEY,'
                             'name TEXT NOT NULL,'
                             'dob TEXT NOT NULL,'
@@ -123,15 +123,15 @@ def main():
         # Some pre-processing
         df = df.loc[:,'studid':'credit'] 
 
-        # Step 2: the dataframe df is written into an SQL table 'Student'
-        df.to_sql('Student', con=engine, if_exists='append', index=False)
+        # Step 2: the dataframe df is written into an SQL table 'student'
+        df.to_sql('student', con=engine, if_exists='append', index=False)
     
         #test
         sql_ =  """
-                SELECT * FROM Student LIMIT 10
+                SELECT * FROM student LIMIT 10
                 """
         test_df = pd.read_sql_query(sql_,sqlite_conn)
-        print("Select 10 Students from Student table: ")
+        print("Select 10 students from student table: ")
         print(test_df)
     #-------------------- Views ---------------------------#
     # Begin transaction
@@ -145,7 +145,7 @@ def main():
         sqlite_conn.execute(
                     'CREATE VIEW "DSstudent" AS '
                         'SELECT studID, name, dob, program, credit '
-                        'FROM Student '
+                        'FROM student '
                         'WHERE program = "DS"'
                     )
         res = sqlite_conn.execute('SELECT * FROM "DSstudent";')
@@ -162,18 +162,18 @@ def main():
         sqlite_conn.execute('DROP VIEW "DSstudent";')
         sqlite_conn.execute(
                      'CREATE TRIGGER MinCredits '
-                         'AFTER UPDATE OF credit ON Student '
+                         'AFTER UPDATE OF credit ON student '
                          'FOR EACH ROW '
                          'WHEN (NEW.credit <= OLD.credit) '
                          'BEGIN '
-                             'UPDATE Student '
+                             'UPDATE student '
                              'SET credit = OLD.credit '
                              'WHERE studID = NEW.studID; '
                          'END; '
                     )
-        sqlite_conn.execute('UPDATE Student SET credit = credit-1 WHERE credit = 1; ')
-        sqlite_conn.execute('UPDATE Student SET credit = 0 WHERE studid = 2;')
-        res = sqlite_conn.execute('SELECT * FROM Student WHERE credit = 1;')
+        sqlite_conn.execute('UPDATE student SET credit = credit-1 WHERE credit = 1; ')
+        sqlite_conn.execute('UPDATE student SET credit = 0 WHERE studid = 2;')
+        res = sqlite_conn.execute('SELECT * FROM student WHERE credit = 1;')
         print("Result of SELECT * after trigger:")
         print(res.fetchall())
         print("\n")
